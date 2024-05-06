@@ -1,2 +1,2 @@
-id = 'test._.crawling'
-password = 'swchilbo20112331'
+id = 'yourid'
+password = 'yourpassword'

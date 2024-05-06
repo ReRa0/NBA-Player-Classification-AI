@@ -63,6 +63,22 @@ for i in range(len(player_list)):
 
     driver.implicitly_wait(15)
 
-    img = driver.find_elements(By.CSS_SELECTOR, 'div._aagv > img')
-    for i in range(len(img)):
-        urllib.request.urlretrieve(img[i].get_attribute('src'), f'{path}\{tag}{i}.jpg')
+    #첫번째 사진 누름
+    first_img = driver.find_element(By.CSS_SELECTOR, '._aagw').click()
+
+    driver.implicitly_wait(15)
+
+    for i in range(3):
+        try:
+
+            #사진 저장
+            img_element = driver.find_element(By.CSS_SELECTOR, '._aatk .x5yr21d.xu96u03.x10l6tqk.x13vifvy.x87ps6o.xh8yej3')
+            img_src = img_element.get_attribute('src')
+            
+            urllib.request.urlretrieve(img_src, f'{path}\{tag}{i}.jpg')
+
+            #다음 버튼 클릭하기
+            driver.find_element(By.CSS_SELECTOR, '._aaqg ._abl-').click()
+        except:
+            #다음 버튼 클릭하기
+            driver.find_element(By.CSS_SELECTOR, '._aaqg ._abl-').click()
