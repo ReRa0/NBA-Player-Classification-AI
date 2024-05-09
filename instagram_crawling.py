@@ -22,8 +22,22 @@ def remove_non_english(input_string):
     cleaned_string = re.sub(r'[^a-zA-Z]', '', input_string)
     return cleaned_string
 
+indexes_to_delete = []
+
+for i in range(len(player_list)):
+    if not player_list[i]['is_active']:
+        indexes_to_delete.append(i)
+
+indexes_to_delete.reverse()
+for i in indexes_to_delete:
+    del player_list[i]
+
 for i in range(len(player_list)):
     player_list[i]['full_name'] = remove_non_english(player_list[i]['full_name'])
+
+data_length = len(player_list)
+new_player_list = player_list
+
 
 ssl._create_default_https_context = ssl._create_unverified_context
 
