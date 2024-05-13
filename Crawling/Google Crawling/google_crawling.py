@@ -50,17 +50,21 @@ for i in range(len(player_list)):
     tag = player_list[i]['full_name']
     url = f'https://www.google.com/search?tbm=isch&q={tag}'
 
-    os.makedirs(f'Crawling/Google Crawling/Google Player Image Data\{tag}', exist_ok=True)
-    path = f'Crawling/Google Crawling/Google Player Image Data\{tag}'
+    os.makedirs(f'Crawling/Google Crawling/Google Player Image Data/{tag}', exist_ok=True)
+    path = f'Crawling/Google Crawling/Google Player Image Data/{tag}'
 
     driver.get(url)
 
+    time.sleep(2)
+
     driver.implicitly_wait(15)
 
-    images = driver.find_elements(By.CSS_SELECTOR, ".rg_i.Q4LuWd")
+    images = driver.find_elements(By.CSS_SELECTOR, '.rg_i.Q4LuWd')
     
     for idx, image in enumerate(images):
         image_url = image.get_attribute('src')
         if image_url:
             image_path = os.path.join(path, f"{tag}_{idx}.jpg")
             urllib.request.urlretrieve(image_url, image_path)
+
+driver.quit()
