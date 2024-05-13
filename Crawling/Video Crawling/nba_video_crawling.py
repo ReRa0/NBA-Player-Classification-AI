@@ -3,8 +3,6 @@ from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.common.by import By
 from webdriver_manager.chrome import ChromeDriverManager
-from selenium.common.exceptions import StaleElementReferenceException
-
 
 import urllib.request
 import os
@@ -69,21 +67,37 @@ for player in player_list:
 
     # 비디오 링크 찾기
     videos = driver.find_elements(By.XPATH, "//*[starts-with(@class, 'VideoSlide_image__3E8E9')]")
+    count = len(videos)
 
-    for i, video in enumerate(videos):
-        video.click()
-        driver.implicitly_wait(10)
+    for i in range(count):
+        driver.execute_script("window.scrollTo(0, 500)")
+
+        videos_2 = driver.find_elements(By.XPATH, "//*[starts-with(@class, 'VideoSlide_image__3E8E9')]")
+
+        try:
+            videos_2[i].click()
+        except:
+            try:
+                button = driver.find_element(By.XPATH, "//*[starts-with(@class, 'CarouselDynamic_next__5i0Dr w-10 h-10 CarouselButton_btnFloating__7MI1F')]")
+                button.click()
+                videos_2[i].click()
+            except:
+                button = driver.find_element(By.XPATH, "//*[starts-with(@class, 'CarouselDynamic_next__5i0Dr w-10 h-10 CarouselButton_btnFloating__7MI1F')]")
+                button.click()
+                videos_2[i].click()
+
+        driver.implicitly_wait(5)
 
         # 비디오 링크 가져오기
         video_element = driver.find_element(By.XPATH, "//*[starts-with(@class, 'vjs-tech')]")
         video_src = video_element.get_attribute('src')
 
         # 비디오 저장
-        urllib.request.urlretrieve(video_src, os.path.join(player_directory, f'{player_name}_video_{i}.mp4'))
-
         try:
-            driver.back()
-            driver.implicitly_wait(3)
-        except StaleElementReferenceException:
-            # If the element is no longer attached to the DOM, catch the exception and proceed
+            urllib.request.urlretrieve(video_src, os.path.join(player_directory, f'{player_name}_video_{i}.mp4'))
+        except:
+            print('error')
             pass
+
+        driver.get(f'https://www.nba.com/player/{player_id}/{player_name}')
+        driver.implicitly_wait(5)
