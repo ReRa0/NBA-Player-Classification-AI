@@ -65,15 +65,17 @@ time.sleep(5)
 for i in range(len(player_list)):
 
     tag = player_list[i]['full_name']
+    path = f'Crawling/Instagram Crawling/Player Image Data/{tag}'
     url = f'https://www.instagram.com/explore/tags/{tag}/'
 
-    os.makedirs(f'Player Image Data\{tag}', exist_ok=True)
-    path = f'Player Image Data\{tag}'
+    os.makedirs(path, exist_ok=True)
+    
 
     driver.get(url)
 
     driver.implicitly_wait(15)
 
     img = driver.find_elements(By.CSS_SELECTOR, 'div._aagv > img')
+
     for i in range(len(img)):
-        urllib.request.urlretrieve(img[i].get_attribute('src'), f'{path}\{tag}{i}.jpg')
+        urllib.request.urlretrieve(img[i].get_attribute('src'), f'{path}/{tag}_{i}.jpg')

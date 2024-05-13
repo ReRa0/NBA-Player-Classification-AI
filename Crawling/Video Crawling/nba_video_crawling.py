@@ -1,54 +1,89 @@
-from pytube import YouTube
-import requests
-from bs4 import BeautifulSoup
+from selenium import webdriver
+from selenium.webdriver.chrome.service import Service
+from selenium.webdriver.chrome.options import Options
+from selenium.webdriver.common.by import By
+from webdriver_manager.chrome import ChromeDriverManager
+from selenium.common.exceptions import StaleElementReferenceException
 
 
-url = "https://www.youtube.com/@NBA/videos"
-response = requests.get(url)
+import urllib.request
+import os
 
-soup = BeautifulSoup(response.text, 'html.parser')
+from nba_api.stats.static import players
 
-# href 가져오기
-hrefs = []
-for link in soup.find_all('a'):
-    href = link.get('href')
-    if href.startswith('/watch'):
-        hrefs.append(href)
+player_list = players.get_players()
 
-base_url = "https://www.youtube.com"
-absolute_hrefs = [base_url + href for href in hrefs]
+# 비활성 선수 제거
+player_list = [player for player in player_list if player['is_active']]
 
-for href in absolute_hrefs:
-    print(href)
+# 이름 수정 함수
+def modify_string(input_string):
+    modified_string = input_string.replace(" ", "-")
+    modified_string = modified_string.lower()
+    return modified_string
 
-exit()
-  
-# 저장할 경로 설정
-SAVE_PATH = "video" # 경로 설정 
-  
-# 다운로드할 유튜브 링크 리스트에 담기
-link=["https://www.youtube.com/watch?v=xWOoBJUqlbI", 
-    "https://www.youtube.com/watch?v=xWOoBJUqlbI"
-    ]
- 
-# for문 돌려서 다운로드받기
-for i in link: 
-    try:    
-        # Youtube객채 생성
-        yt = YouTube(i) 
-    except: 
-          
-        # 예외처리
-        print("Connection Error") 
-      
-    # 모든 파일 mp4 저장으로 설정
-    mp4files = yt.filter('mp4') 
-  
-    # get()메서드로 해상도, 비디오 확장자 받기
-    d_video = yt.get(mp4files[-1].extension,mp4files[-1].resolution) 
-    try: 
-        # 비디오 다운받기
-        d_video.download(SAVE_PATH) 
-    except: 
-        print("에러 발생!") 
-print('다운 완료!')
+# 선수 이름 수정
+for player in player_list:
+    player['full_name'] = modify_string(player['full_name'])
+
+# 원하는 디렉토리 경로 지정
+desired_directory = 'Crawling/Video Crawling/NBA Videos'
+
+# 경로가 존재하지 않으면 생성
+if not os.path.exists(desired_directory):
+    os.makedirs(desired_directory)
+
+# Chrome 옵션 설정
+chrome_options = Options()
+chrome_options.add_experimental_option("detach", True)
+chrome_options.add_experimental_option('excludeSwitches', ['enable-logging'])
+
+# WebDriver 초기화
+service = Service(ChromeDriverManager().install())
+driver = webdriver.Chrome(service=service, options=chrome_options)
+
+# 웹페이지 이동
+driver.get("https://www.nba.com/players")
+
+# 대기
+driver.implicitly_wait(10)
+
+for player in player_list:
+    player_name = player['full_name']
+    player_id = player['id']
+
+    # 선수별 디렉토리 생성
+    player_directory = os.path.join(desired_directory, player_name)
+    if not os.path.exists(player_directory):
+        os.makedirs(player_directory)
+
+    # 선수 페이지로 이동
+    driver.get(f'https://www.nba.com/player/{player_id}/{player_name}')
+
+    # 쿠키 팝업 닫기
+    try:
+        cookie_ignore = driver.find_element(By.XPATH, "//*[starts-with(@class, 'onetrust-close-btn-handler banner-close-button ot-close-link')]")
+        cookie_ignore.click()
+    except:
+        pass
+
+    # 비디오 링크 찾기
+    videos = driver.find_elements(By.XPATH, "//*[starts-with(@class, 'VideoSlide_image__3E8E9')]")
+
+    for i, video in enumerate(videos):
+        video.click()
+        driver.implicitly_wait(10)
+
+        # 비디오 링크 가져오기
+        video_element = driver.find_element(By.XPATH, "//*[starts-with(@class, 'vjs-tech')]")
+        video_src = video_element.get_attribute('src')
+
+        # 비디오 저장
+        urllib.request.urlretrieve(video_src, os.path.join(player_directory, f'{player_name}_video_{i}.mp4'))
+
+        try:
+            driver.back()
+            driver.implicitly_wait(3)
+        except StaleElementReferenceException:
+            # If the element is no longer attached to the DOM, catch the exception and proceed
+            pass
