@@ -45,6 +45,29 @@ driver = webdriver.Chrome(options=chrome_options)
 
 driver.get("https://www.google.com/")
 
+def scroll_down():
+    while True:
+        time.sleep(3)
+        # 페이지 맨 아래로 스크롤
+        driver.find_element(By.XPATH, '//body').send_keys(Keys.END)
+        time.sleep(1)
+        try:
+            # '더보기' 버튼이 보이면 클릭
+            load_more_button = driver.find_element(By.XPATH, '//*[@id="islmp"]/div/div/div/div/div[1]/div[2]/div[2]/input')
+            if load_more_button.is_displayed():
+                load_more_button.click()
+        except:
+            pass
+        time.sleep(1)
+        try:
+            # '더 이상 표시할 콘텐츠가 없습니다.' 메시지가 보이면 종료
+            no_more_content = driver.find_element(By.XPATH, '//div[@class="K25wae"]//*[text()="더 이상 표시할 콘텐츠가 없습니다."]')
+            if no_more_content.is_displayed():
+                break
+        except:
+            pass
+
+
 for i in range(len(player_list)):
 
     tag = player_list[i]['full_name']
@@ -55,9 +78,9 @@ for i in range(len(player_list)):
 
     driver.get(url)
 
-    time.sleep(2)
-
     driver.implicitly_wait(15)
+
+    scroll_down()
 
     images = driver.find_elements(By.CSS_SELECTOR, '.rg_i.Q4LuWd')
     
