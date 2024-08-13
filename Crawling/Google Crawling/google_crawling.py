@@ -70,7 +70,7 @@ for i in range(len(player_list)):
 
     scroll_down()
 
-    images = driver.find_elements(By.CSS_SELECTOR, '.rg_i.Q4LuWd')
+    images = driver.find_elements(By.CSS_SELECTOR, '.YQ4gaf:not([class*=" "])')
     
     for idx, image in enumerate(images):
         image_url = image.get_attribute('src')
