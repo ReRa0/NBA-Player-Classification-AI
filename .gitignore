@@ -10,8 +10,11 @@ Crawling/Google Crawling/Clustered Image/*/
 # Precious Achiuwa 폴더는 무시하지 않음
 !Crawling/Google Crawling/Clustered Image/Precious Achiuwa/
 
-#NBA standard 이미지 데이터
-Crawling/NBA Crawling/Player Standard Data/
+# Crawling/NBA Crawling/Player Standard Data/ 디렉토리 내의 모든 파일을 무시
+Crawling/NBA Crawling/Player Standard Data/*
+
+# Precious Achiuwa_std.jpg 파일은 무시하지 않음
+!Crawling/NBA Crawling/Player Standard Data/Precious Achiuwa_std.jpg
 
 #인스타그램 이미지 데이터
 Crawling/Instagram Crawling/Player Image Data/
