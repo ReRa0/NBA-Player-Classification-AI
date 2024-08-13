@@ -1,5 +1,8 @@
-# 구글 크롤링 이미지 데이터
-Crawling/Google Crawling/Google Player Image Data/
+# Crawling/Google Crawling/Google Player Image Data/ 디렉토리 내의 모든 폴더를 무시
+Crawling/Google Crawling/Google Player Image Data/*/
+
+# PreciousAchiuwa 폴더는 무시하지 않음
+!Crawling/Google Crawling/Google Player Image Data/PreciousAchiuwa/
 
 #군집화 이미지
 Crawling/Google Crawling/Clustered Image/
