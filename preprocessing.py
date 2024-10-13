@@ -1,6 +1,5 @@
 import numpy as np
-import tensorflow as tf
-from keras.applications.vgg16 import VGG16, preprocess_input
+from keras.applications import VGG16, preprocess_input
 from keras.preprocessing import image
 from sklearn.decomposition import PCA
 from sklearn.cluster import KMeans
@@ -12,7 +11,7 @@ from nba_api.stats.static import players
 import re
 from mtcnn import MTCNN
 import cv2
-from PIL import ImageFilter,Image, ImageEnhance,ImageOps
+from PIL import ImageFilter, Image, ImageEnhance, ImageOps
 import io
 import random
 
@@ -140,7 +139,7 @@ def augment_images(input_folder, output_folder):
 
             # 회전 이미지 (3장)
             for i in range(3):
-                angle = random.uniform(-15, 15)
+                angle = random.uniform(-50, 50)
                 rotated_image = rotate_image(image, angle)
                 rotated_image.save(os.path.join(output_folder, f"{os.path.splitext(filename)[0]}_rotated_{i}.jpg"))
 
