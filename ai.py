@@ -186,3 +186,60 @@ with open(csv_file, 'w', newline='') as csvfile:
         writer.writerow([key, value])
 
 print(f"Performance results saved to 'model_performance_report.txt' and '{csv_file}'")
+
+# -------------------------------
+# 성능 평가 그래프 저장 및 파일 출력 추가
+# -------------------------------
+
+# 학습 정확도 및 손실 그래프 저장 함수
+def plot_performance_and_save(history, fine_tune_history=None, save_path='accuracy_loss_plot.png'):
+    plt.figure(figsize=(12, 5))
+
+    # 1. 정확도 그래프
+    plt.subplot(1, 2, 1)
+    plt.plot(history.history['accuracy'], label='Training Accuracy')
+    plt.plot(history.history['val_accuracy'], label='Validation Accuracy')
+    if fine_tune_history:
+        plt.plot(
+            [i + len(history.history['accuracy']) for i in range(len(fine_tune_history.history['accuracy']))],
+            fine_tune_history.history['accuracy'],
+            label='Fine-tune Training Accuracy'
+        )
+        plt.plot(
+            [i + len(history.history['val_accuracy']) for i in range(len(fine_tune_history.history['val_accuracy']))],
+            fine_tune_history.history['val_accuracy'],
+            label='Fine-tune Validation Accuracy'
+        )
+    plt.title('Accuracy')
+    plt.xlabel('Epochs')
+    plt.ylabel('Accuracy')
+    plt.legend()
+
+    # 2. 손실 그래프
+    plt.subplot(1, 2, 2)
+    plt.plot(history.history['loss'], label='Training Loss')
+    plt.plot(history.history['val_loss'], label='Validation Loss')
+    if fine_tune_history:
+        plt.plot(
+            [i + len(history.history['loss']) for i in range(len(fine_tune_history.history['loss']))],
+            fine_tune_history.history['loss'],
+            label='Fine-tune Training Loss'
+        )
+        plt.plot(
+            [i + len(history.history['val_loss']) for i in range(len(fine_tune_history.history['val_loss']))],
+            fine_tune_history.history['val_loss'],
+            label='Fine-tune Validation Loss'
+        )
+    plt.title('Loss')
+    plt.xlabel('Epochs')
+    plt.ylabel('Loss')
+    plt.legend()
+
+    plt.tight_layout()
+
+    # 그래프를 파일로 저장
+    plt.savefig(save_path)
+    print(f"Performance plot saved as '{save_path}'")
+
+# 학습 및 평가 성능 그래프 파일로 저장
+plot_performance_and_save(history, fine_tune_history=history_finetune, save_path='accuracy_loss_plot.png')
