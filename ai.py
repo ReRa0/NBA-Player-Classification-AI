@@ -1,8 +1,7 @@
-import os
 import numpy as np
 import csv
+from keras.applications import MobileNetV2
 from keras.preprocessing.image import ImageDataGenerator
-from keras.models import load_model
 from keras.layers import Dense, Dropout, BatchNormalization, Flatten
 from keras.models import Model
 from keras.optimizers import Adam
@@ -29,8 +28,8 @@ def step_decay(epoch):
     return lr
 
 # 데이터 경로 설정
-train_dataset_dir = 'Crawling/Google Crawling/Augmentation Image/'
-val_dataset_dir = 'Crawling/Google Crawling/Google Player Image Data/'
+train_dataset_dir = 'train/'
+val_dataset_dir = 'val/'
 
 # ImageDataGenerator로 데이터 로드 (증강 제거)
 train_datagen = ImageDataGenerator(rescale=1.0/255.0)
@@ -51,7 +50,7 @@ val_generator = val_datagen.flow_from_directory(
 )
 
 # FaceNet 모델 로드 및 추가 레이어 정의
-base_model = load_model('model/facenet_keras.h5')
+base_model = MobileNetV2(input_shape=(160, 160, 3), include_top=False, weights='imagenet')
 
 # 기존 레이어 대신 Flatten 사용
 x = base_model.output
