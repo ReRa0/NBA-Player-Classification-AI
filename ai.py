@@ -12,8 +12,8 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 
 # 하이퍼파라미터 설정
-input_size = (160, 160)
-batch_size = 32
+input_size = (224, 224)
+batch_size = 64
 num_classes = 528
 initial_lr = 0.001
 fine_tune_lr = 0.0001
