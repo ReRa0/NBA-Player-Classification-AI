@@ -50,16 +50,16 @@ val_generator = val_datagen.flow_from_directory(
 )
 
 # FaceNet 모델 로드 및 추가 레이어 정의
-base_model = MobileNetV2(input_shape=(160, 160, 3), include_top=False, weights='imagenet')
+base_model = MobileNetV2(input_shape=(224, 224, 3), include_top=False, weights='imagenet')
 
 # 기존 레이어 대신 Flatten 사용
 x = base_model.output
 x = Flatten()(x)
+x = Dropout(0.5)(x)  # 드롭아웃 위치 변경
 x = BatchNormalization()(x)
-x = Dropout(0.5)(x)
 x = Dense(512, activation='relu')(x)
-x = BatchNormalization()(x)
 x = Dropout(0.5)(x)
+x = BatchNormalization()(x)
 predictions = Dense(num_classes, activation='softmax')(x)
 
 # 모델 정의
