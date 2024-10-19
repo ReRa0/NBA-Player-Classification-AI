@@ -4,7 +4,7 @@ import random
 
 # 경로 설정
 src_dir = 'Crawling/Google Crawling/Augmentation Image/'  # 원본 데이터 폴더
-dst_base_dir = 'D:/NBA-Player-Classification-AI/'  # 새로운 데이터 저장할 위치
+dst_base_dir = 'NBA-Player-Classification-AI/'  # 새로운 데이터 저장할 위치
 train_dir = os.path.join(dst_base_dir, 'train')  # 학습 데이터 폴더
 val_dir = os.path.join(dst_base_dir, 'val')  # 검증 데이터 폴더
 
