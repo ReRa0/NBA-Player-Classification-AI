@@ -55,12 +55,10 @@ base_model = MobileNetV2(input_shape=(224, 224, 3), include_top=False, weights='
 # 기존 레이어 대신 Flatten 사용
 x = base_model.output
 x = Flatten()(x)
+x = Dense(512, activation='relu')(x)  # Flatten 뒤에 Dense 레이어 추가
 x = Dropout(0.5)(x)  # 드롭아웃 위치 변경
-x = BatchNormalization()(x)
-x = Dense(512, activation='relu')(x)
-x = Dropout(0.5)(x)
-x = BatchNormalization()(x)
-predictions = Dense(num_classes, activation='softmax')(x)
+x = BatchNormalization()(x)  # Batch Normalization 위치 조정
+x = Dense(num_classes, activation='softmax')(x)  # 최종 예측 레이어
 
 # 모델 정의
 model = Model(inputs=base_model.input, outputs=predictions)
