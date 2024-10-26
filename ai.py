@@ -7,38 +7,37 @@ from keras.models import Model
 from keras.optimizers import Adam
 from keras.callbacks import ModelCheckpoint, EarlyStopping, ReduceLROnPlateau, LearningRateScheduler
 import math
-from sklearn.metrics import classification_report, confusion_matrix, accuracy_score, top_k_accuracy_score
+from sklearn.metrics import classification_report, confusion_matrix, accuracy_score
 import matplotlib.pyplot as plt
 import seaborn as sns
 
-# 하이퍼파라미터 설정
+# Hyperparameters
 input_size = (224, 224)
 batch_size = 64
-num_classes = 507
+num_classes = 1  # One class for "LeBron James"
 initial_lr = 0.001
 fine_tune_lr = 0.0001
 epochs_initial = 20
 epochs_finetune = 10
 
-# 학습률 스케줄러
+# Learning rate scheduler
 def step_decay(epoch):
     drop = 0.5
     epochs_drop = 10.0
     lr = initial_lr * math.pow(drop, math.floor((1+epoch)/epochs_drop))
     return lr
 
-# 데이터 경로 설정
+# Data paths
 train_dataset_dir = 'train/'
 val_dataset_dir = 'val/'
 
-# ImageDataGenerator로 데이터 로드 (증강 제거)
+# Load data with ImageDataGenerator (no augmentation)
 train_datagen = ImageDataGenerator(rescale=1.0/255.0)
-
 train_generator = train_datagen.flow_from_directory(
     train_dataset_dir,
     target_size=input_size,
     batch_size=batch_size,
-    class_mode='categorical'
+    class_mode='binary'  # Binary for single class
 )
 
 val_datagen = ImageDataGenerator(rescale=1.0/255.0)
@@ -46,31 +45,29 @@ val_generator = val_datagen.flow_from_directory(
     val_dataset_dir,
     target_size=input_size,
     batch_size=batch_size,
-    class_mode='categorical'
+    class_mode='binary'
 )
 
-# FaceNet 모델 로드 및 추가 레이어 정의
+# Load base model and add custom layers
 base_model = MobileNetV2(input_shape=(224, 224, 3), include_top=False, weights='imagenet')
-
-# 기존 레이어 대신 Flatten 사용
 x = base_model.output
 x = Flatten()(x)
-x = Dense(512, activation='relu')(x)  # Flatten 뒤에 Dense 레이어 추가
-x = Dropout(0.5)(x)  # 드롭아웃 위치 변경
-x = BatchNormalization()(x)  # Batch Normalization 위치 조정
-x = Dense(num_classes, activation='softmax')(x)  # 최종 예측 레이어
+x = Dense(512, activation='relu')(x)
+x = Dropout(0.5)(x)
+x = BatchNormalization()(x)
+predictions = Dense(num_classes, activation='sigmoid')(x)  # Sigmoid for binary classification
 
-# 모델 정의
+# Define model
 model = Model(inputs=base_model.input, outputs=predictions)
 
-# Base model은 frozen하여 전이 학습
+# Freeze base model layers for transfer learning
 for layer in base_model.layers:
     layer.trainable = False
 
-# 모델 컴파일
-model.compile(optimizer=Adam(learning_rate=initial_lr), loss='categorical_crossentropy', metrics=['accuracy'])
+# Compile model
+model.compile(optimizer=Adam(learning_rate=initial_lr), loss='binary_crossentropy', metrics=['accuracy'])
 
-# 콜백 설정
+# Callbacks
 checkpoint = ModelCheckpoint(
     'best_model.h5',
     monitor='val_accuracy',
@@ -94,10 +91,9 @@ reduce_lr = ReduceLROnPlateau(
 )
 
 lr_scheduler = LearningRateScheduler(step_decay)
-
 callbacks = [checkpoint, early_stopping, reduce_lr, lr_scheduler]
 
-# 모델 학습 (초기 전이 학습 단계)
+# Initial training phase
 history = model.fit(
     train_generator,
     validation_data=val_generator,
@@ -105,14 +101,14 @@ history = model.fit(
     callbacks=callbacks
 )
 
-# 베이스 모델의 상위 레이어 풀기 (상위 40%만 학습)
+# Unfreeze top layers for fine-tuning
 for layer in base_model.layers[-int(len(base_model.layers) * 0.4):]:
     layer.trainable = True
 
-# 학습률을 낮춰서 다시 컴파일
-model.compile(optimizer=Adam(learning_rate=fine_tune_lr), loss='categorical_crossentropy', metrics=['accuracy'])
+# Recompile model with lower learning rate
+model.compile(optimizer=Adam(learning_rate=fine_tune_lr), loss='binary_crossentropy', metrics=['accuracy'])
 
-# Fine-tuning 단계 학습
+# Fine-tuning phase
 history_finetune = model.fit(
     train_generator,
     validation_data=val_generator,
@@ -120,62 +116,55 @@ history_finetune = model.fit(
     callbacks=callbacks
 )
 
-# 최종 모델 저장
+# Save final model
 model.save('final_model.h5')
 
-# -------------------------------
-# 성능 평가 코드 추가 및 파일 저장
-# -------------------------------
+# --------------------------------
+# Performance evaluation and save
+# --------------------------------
 
-# 검증 데이터에 대한 예측
-y_true = val_generator.classes  # 실제 레이블
+# Predict on validation set
+y_true = val_generator.classes  # Actual labels
 y_pred = model.predict(val_generator, steps=val_generator.samples // batch_size + 1)
-y_pred_classes = np.argmax(y_pred, axis=1)  # 예측된 레이블
+y_pred_classes = (y_pred > 0.5).astype(int).flatten()  # Binary classification threshold
 
-# 1. 정확도 (Accuracy)
+# 1. Accuracy
 accuracy = accuracy_score(y_true, y_pred_classes)
 print(f'Accuracy: {accuracy:.4f}')
 
-# 2. 정밀도, 재현율, F1 Score
-classification_rep = classification_report(y_true, y_pred_classes, target_names=list(val_generator.class_indices.keys()))
+# 2. Classification report
+classification_rep = classification_report(y_true, y_pred_classes, target_names=["LeBron James"])
 print("Classification Report:")
 print(classification_rep)
 
-# 3. 혼동 행렬 (Confusion Matrix)
+# 3. Confusion Matrix
 conf_matrix = confusion_matrix(y_true, y_pred_classes)
-plt.figure(figsize=(12, 10))
-sns.heatmap(conf_matrix, annot=True, fmt='d', cmap='Blues', xticklabels=val_generator.class_indices.keys(), yticklabels=val_generator.class_indices.keys())
+plt.figure(figsize=(6, 5))
+sns.heatmap(conf_matrix, annot=True, fmt='d', cmap='Blues', xticklabels=["LeBron James"], yticklabels=["LeBron James"])
 plt.title('Confusion Matrix')
 plt.ylabel('True Label')
 plt.xlabel('Predicted Label')
 plt.show()
 
-# 4. Top-5 Accuracy
-top_5_accuracy = top_k_accuracy_score(y_true, y_pred, k=5)
-print(f'Top-5 Accuracy: {top_5_accuracy:.4f}')
-
-# 성능 평가 지표 요약
+# Performance summary dictionary
 performance_summary = {
-    "Accuracy": accuracy,
-    "Top-5 Accuracy": top_5_accuracy
+    "Accuracy": accuracy
 }
 
-# -------------------------------
-# 1. 텍스트 파일로 저장
-# -------------------------------
+# --------------------------------
+# 1. Save as text file
+# --------------------------------
 with open('model_performance_report.txt', 'w') as f:
     f.write("Classification Report:\n")
     f.write(classification_rep)
     f.write("\n")
     f.write(f'Accuracy: {accuracy:.4f}\n')
-    f.write(f'Top-5 Accuracy: {top_5_accuracy:.4f}\n')
 
-# -------------------------------
-# 2. CSV 파일로 저장
-# -------------------------------
+# --------------------------------
+# 2. Save as CSV file
+# --------------------------------
 csv_file = 'model_performance_summary.csv'
 csv_columns = ['Metric', 'Value']
-
 with open(csv_file, 'w', newline='') as csvfile:
     writer = csv.writer(csvfile)
     writer.writerow(csv_columns)
@@ -184,15 +173,14 @@ with open(csv_file, 'w', newline='') as csvfile:
 
 print(f"Performance results saved to 'model_performance_report.txt' and '{csv_file}'")
 
-# -------------------------------
-# 성능 평가 그래프 저장 및 파일 출력 추가
-# -------------------------------
+# --------------------------------
+# Save performance graph
+# --------------------------------
 
-# 학습 정확도 및 손실 그래프 저장 함수
 def plot_performance_and_save(history, fine_tune_history=None, save_path='accuracy_loss_plot.png'):
     plt.figure(figsize=(12, 5))
 
-    # 1. 정확도 그래프
+    # 1. Accuracy plot
     plt.subplot(1, 2, 1)
     plt.plot(history.history['accuracy'], label='Training Accuracy')
     plt.plot(history.history['val_accuracy'], label='Validation Accuracy')
@@ -212,7 +200,7 @@ def plot_performance_and_save(history, fine_tune_history=None, save_path='accura
     plt.ylabel('Accuracy')
     plt.legend()
 
-    # 2. 손실 그래프
+    # 2. Loss plot
     plt.subplot(1, 2, 2)
     plt.plot(history.history['loss'], label='Training Loss')
     plt.plot(history.history['val_loss'], label='Validation Loss')
@@ -233,10 +221,7 @@ def plot_performance_and_save(history, fine_tune_history=None, save_path='accura
     plt.legend()
 
     plt.tight_layout()
-
-    # 그래프를 파일로 저장
     plt.savefig(save_path)
     print(f"Performance plot saved as '{save_path}'")
 
-# 학습 및 평가 성능 그래프 파일로 저장
 plot_performance_and_save(history, fine_tune_history=history_finetune, save_path='accuracy_loss_plot.png')

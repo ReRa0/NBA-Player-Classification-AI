@@ -23,3 +23,7 @@ Crawling/Instagram Crawling/Player Image Data/
 
 #NBA 영상 데이터
 Crawling/Video Crawling/NBA Videos/
+
+train/*
+
+val/*
